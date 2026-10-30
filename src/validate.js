@@ -23,7 +23,7 @@ function validateEnquiry(body) {
     return { error: 'Invalid enquiry' };
   }
 
-  if (clean(body.company, 200)) {
+  if (clean(body.company, 200) || clean(body.enquiry_hp, 200)) {
     return { honeypot: true };
   }
 

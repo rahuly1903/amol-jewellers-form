@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const { Enquiry, presentEnquiry } = require('./enquiry');
+const { mailConfigError, sendEnquiryEmail } = require('./mail');
 const { validateEnquiry } = require('./validate');
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -133,6 +134,15 @@ function createApp() {
       }
 
       const enquiry = await Enquiry.create(result.value);
+      try {
+        await sendEnquiryEmail(enquiry);
+      } catch (mailError) {
+        console.error('Enquiry saved but email failed', enquiry._id.toString(), mailError);
+        return res.status(502).json({
+          error: 'We could not send your enquiry. Please try again.'
+        });
+      }
+
       return res.status(201).json({
         id: enquiry._id.toString(),
         message: 'Enquiry saved'
@@ -185,6 +195,12 @@ async function start() {
 
   if (!READ_API_KEY) {
     console.error('Set READ_API_KEY before starting. The Shopify page uses it to read submissions.');
+    process.exit(1);
+  }
+
+  const mailError = mailConfigError();
+  if (mailError) {
+    console.error(mailError);
     process.exit(1);
   }
 

@@ -1,12 +1,12 @@
 # Anmol Jewellers enquiry API
 
-Express app for the storefront **Enquire Now** popup. It stores name, mobile, email, pincode, comments, and the page URL in MongoDB, and returns that list to the Shopify enquiries page.
+Express app for the storefront **Enquire Now** popup. It stores name, mobile, email, pincode, comments, and the page URL in MongoDB, emails that submission through Resend, and returns the list to the Shopify enquiries page.
 
 ## Endpoints
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| `POST` | `/api/enquiries` | None (public, rate limited) | Save one enquiry |
+| `POST` | `/api/enquiries` | None (public, rate limited) | Save one enquiry and email it |
 | `GET` | `/api/enquiries` | `x-api-key: READ_API_KEY` | List enquiries, newest first |
 | `GET` | `/health` | None | Railway health check |
 
@@ -20,6 +20,9 @@ Express app for the storefront **Enquire Now** popup. It stores name, mobile, em
    - `MONGODB_URI` — connection string. Railway’s MongoDB plugin often injects `MONGO_URL`, which this app also accepts.
    - `READ_API_KEY` — long random string. Generate one with `openssl rand -hex 24`.
    - `ALLOWED_ORIGINS` — `https://anmoljewellers.in,https://www.anmoljewellers.in`
+   - `RESEND_API_KEY` — API key from the Resend dashboard.
+   - `RESEND_FROM` — sender on a domain verified in Resend, for example `Anmol Jewellers <enquiries@anmoljewellers.in>`.
+   - `ENQUIRY_TO_EMAIL` — optional. Defaults to `cre1.anmoljewellers@gmail.com`.
 4. Deploy. Railway runs `npm start` and checks `/health`.
 5. Copy the public URL, without a trailing slash.
 
@@ -32,4 +35,4 @@ Express app for the storefront **Enquire Now** popup. It stores name, mobile, em
 3. In that section, paste the same `READ_API_KEY`.
 4. Leave the page out of the menu. It lists customer names, phones, and emails. The key is also visible to anyone who can open the page.
 
-The popup still sends the enquiry through Shopify’s contact form after a successful save, so the existing store email keeps working. If the API is down, the popup falls back to the Shopify contact form.
+After a successful save, the API emails the form fields to `cre1.anmoljewellers@gmail.com`. Reply goes to the customer’s address. If Resend rejects the send, the enquiry stays in MongoDB and the popup asks the customer to try again.
